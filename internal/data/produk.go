@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -167,4 +168,59 @@ func (m ProdukModel) Delete(id int64) error {
 	}
 	return nil
 
+}
+
+func (m ProdukModel) GetAll(nama string, filters Filters) ([]*Produk, Metadata, error) {
+	query := fmt.Sprintf(`
+		SELECT count(*) OVER(), p.id, p.created_at, p.nama, p.deskripsi, p.grup_id, gp.nama AS grup_nama, p.slug, p.stok, p.harga, p.version
+		FROM produk p JOIN grup_produk gp ON p.grup_id = gp.id
+		WHERE (to_tsvector('simple', p.nama) @@ plainto_tsquery('simple', $1) OR $1 = '')
+		ORDER BY %s %s, id ASC
+		LIMIT $2 OFFSET $3`, filters.sortColumn(), filters.sortDirection())
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{nama, filters.limit(), filters.offset()}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, Metadata{}, err
+	}
+
+	defer rows.Close()
+
+	totalRecords := 0
+	produkList := []*Produk{}
+
+	for rows.Next() {
+		var produk Produk
+
+		err := rows.Scan(
+			&totalRecords,
+			&produk.ID,
+			&produk.CreatedAt,
+			&produk.Nama,
+			&produk.Deskripsi,
+			&produk.GrupID,
+			&produk.GrupNama,
+			&produk.Slug,
+			&produk.Stok,
+			&produk.Harga,
+			&produk.Version,
+		)
+		if err != nil {
+			return nil, Metadata{}, err
+		}
+
+		produkList = append(produkList, &produk)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, Metadata{}, err
+	}
+
+	metadata := calculateMetadata(totalRecords, filters.Page, filters.PageSize)
+
+	return produkList, metadata, nil
 }
