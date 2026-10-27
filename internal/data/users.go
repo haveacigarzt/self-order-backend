@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 	"selforder.pramana.net/internal/validator"
 )
@@ -19,10 +20,11 @@ type User struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Password  password  `json:"-"`
+	RoleID    int32     `json:"-"`
 	Activated bool      `json:"activated"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
-	Version   int       `json:"-"`
+	Version   int32     `json:"-"`
 }
 
 type password struct {
@@ -83,23 +85,30 @@ type UserModel struct {
 	DB *sql.DB
 }
 
+// mailtrap token f190a32e537fe4c9d4e481d2adc84770
 func (m UserModel) Insert(user *User) error {
 	query := `
-	INSERT INTO users (name, email, password_hash, activated)
-	VALUES ($1, $2, $3, $4)
+	INSERT INTO users (name, email, password_hash, activated, role_id)
+	VALUES ($1, $2, $3, $4, $5)
 	RETURNING id, created_at, version`
-	args := []any{user.Name, user.Email, user.Password.hash, user.Activated}
+	args := []any{user.Name, user.Email, user.Password.hash, user.Activated, user.RoleID}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&user.ID, &user.CreatedAt, &user.Version)
 	if err != nil {
-		switch {
-		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
-			return ErrDuplicateEmail
-		default:
-			return err
+		var pqErr *pq.Error
+
+		if errors.As(err, &pqErr) {
+			switch pqErr.Code {
+			case "23505": // unique_violation
+				if pqErr.Constraint == "users_email_key" {
+					return ErrDuplicateEmail
+				}
+			}
 		}
+
+		return err
 	}
 	return nil
 }
