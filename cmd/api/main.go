@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
+	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,9 +18,13 @@ import (
 	// compiler complaining that the package isn't being used.
 	_ "github.com/lib/pq"
 	"selforder.pramana.net/internal/data"
+	"selforder.pramana.net/internal/vcs"
 )
 
-const version = "1.0.0"
+// Make version a variable (rather than a constant) and set its value to vcs.Version().
+var (
+	version = vcs.Version()
+)
 
 type config struct {
 	port int
@@ -36,6 +44,11 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+
+	// Add a cors struct and trustedOrigins field with the type []string.
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 type application struct {
@@ -50,7 +63,7 @@ func main() {
 
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
-	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("SELF_ORDER_DB_DSN"), "PostgreSQL DSN")
+	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
 
 	// Read the connection pool settings from command-line flags into the config struct.
 	// Notice that the default values we're using are the ones we discussed above?
@@ -64,7 +77,22 @@ func main() {
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
+		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
+
+	// Create a new version boolean flag with the default value of false.
+	displayVersion := flag.Bool("version", false, "Display version and exit")
+
 	flag.Parse()
+
+	// If the version flag value is true, then print out the version number and
+	// immediately exit.
+	if *displayVersion {
+		fmt.Printf("Version:\t%s\n", version)
+		os.Exit(0)
+	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
@@ -77,6 +105,21 @@ func main() {
 	defer db.Close()
 
 	logger.Info("database connection pool established")
+
+	expvar.NewString("version").Set(version)
+
+	// Publish the number of active goroutines.
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	// Publish the database connection pool statistics.
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	// Publish the current Unix timestamp.
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 
 	app := &application{
 		config: cfg,

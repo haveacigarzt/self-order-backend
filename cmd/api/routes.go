@@ -1,6 +1,7 @@
 package main
 
 import (
+	"expvar"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -16,13 +17,17 @@ func (app *application) routes() http.Handler {
 
 	router.HandlerFunc(http.MethodPost, "/v1/grupproduk", app.createGrupProdukHandler)
 
-	router.HandlerFunc(http.MethodPost, "/v1/produk", app.createProdukHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/produk/:id", app.showProdukHandler)
-	router.HandlerFunc(http.MethodPatch, "/v1/produk/:id", app.updateProdukHandler)
-	router.HandlerFunc(http.MethodDelete, "/v1/produk/:id", app.deleteProdukHandler)
-	router.HandlerFunc(http.MethodGet, "/v1/produk", app.listProdukHandler)
+	router.HandlerFunc(http.MethodPost, "/v1/produk", app.requireActivatedUser(app.createProdukHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/produk/:id", app.requirePermission("produk:read", app.requireActivatedUser(app.showProdukHandler)))
+	router.HandlerFunc(http.MethodPatch, "/v1/produk/:id", app.requireActivatedUser(app.updateProdukHandler))
+	router.HandlerFunc(http.MethodDelete, "/v1/produk/:id", app.requireActivatedUser(app.deleteProdukHandler))
+	router.HandlerFunc(http.MethodGet, "/v1/produk", app.requireActivatedUser(app.listProdukHandler))
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 
-	return app.recoverPanic(app.rateLimit(router))
+	router.HandlerFunc(http.MethodPost, "/v1/tokens/authentication", app.createAuthenticationTokenHandler)
+
+	router.Handler(http.MethodGet, "/debug/vars", expvar.Handler())
+
+	return app.metrics(app.recoverPanic(app.enableCORS(app.rateLimit(app.authenticate(router)))))
 }
