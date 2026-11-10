@@ -205,13 +205,57 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	produkList, metadata, err := app.models.Produk.GetAll(input.Nama, input.Filters)
+	produkList, metadata, err := app.models.Produk.GetAllByGroup(input.Nama, input.Filters)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"daftar_produk": produkList, "metadata": metadata}, nil)
+	// err = app.writeJSON(w, http.StatusOK, envelope{"daftar_produk": produkList, "metadata": metadata}, nil)
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// }
+	groups := make([]data.ProdukGroup, 0)
+
+	groupIndex := make(map[int64]int)
+
+	for _, produk := range produkList {
+		index, exists := groupIndex[produk.GrupID]
+
+		if !exists {
+			index = len(groups)
+
+			groupIndex[produk.GrupID] = index
+
+			groups = append(groups, data.ProdukGroup{
+				GrupID:   produk.GrupID,
+				GrupNama: produk.GrupNama,
+				Produk:   make([]*data.Produk, 0),
+			})
+		}
+
+		groups[index].Produk = append(groups[index].Produk, produk)
+	}
+
+	viewData := map[string]any{
+		"Groups":   groups,
+		"Metadata": metadata,
+	}
+
+	// b, err := json.MarshalIndent(viewData, "", "    ")
+	// if err != nil {
+	// 	app.serverErrorResponse(w, r, err)
+	// 	return
+	// }
+
+	// fmt.Println(string(b))
+
+	if r.Header.Get("HX-Request") == "true" {
+		err = app.render(w, r, http.StatusOK, "produk-list", viewData)
+	} else {
+		err = app.render(w, r, http.StatusOK, "produk", viewData)
+	}
+
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}

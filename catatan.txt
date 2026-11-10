@@ -1,1 +1,2 @@
-./bin/api -port=4040 -db-dsn=$SELF_ORDER_DB_DSN
+./bin/api -port=4040 -db-dsn=$SELF_ORDER_DB_DSN -cors-trusted-origins="*"
+

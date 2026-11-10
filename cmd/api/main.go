@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 
 	// Import the pq driver so that it can register itself with the database/sql
@@ -18,6 +19,7 @@ import (
 	// compiler complaining that the package isn't being used.
 	_ "github.com/lib/pq"
 	"selforder.pramana.net/internal/data"
+	"selforder.pramana.net/internal/mailer"
 	"selforder.pramana.net/internal/vcs"
 )
 
@@ -45,6 +47,14 @@ type config struct {
 		enabled bool
 	}
 
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
+
 	// Add a cors struct and trustedOrigins field with the type []string.
 	cors struct {
 		trustedOrigins []string
@@ -52,10 +62,12 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *slog.Logger
-	models data.Models
-	wg     sync.WaitGroup
+	config        config
+	logger        *slog.Logger
+	models        data.Models
+	wg            sync.WaitGroup
+	mailer        mailer.Mailer
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -76,6 +88,12 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
+
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.gmail.com", "SMTP host")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 587, "SMTP port")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", "pramanaafriandy@gmail.com", "SMTP username")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", "ypcujvhuvnebgmuu", "SMTP password")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Self Order <no-reply@selforder.pramana.net>", "SMTP sender")
 
 	flag.Func("cors-trusted-origins", "Trusted CORS origins (space separated)", func(val string) error {
 		cfg.cors.trustedOrigins = strings.Fields(val)
@@ -121,10 +139,18 @@ func main() {
 		return time.Now().Unix()
 	}))
 
+	templateCache, err := newTemplateCache()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
+
 	app := &application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
+		config:        cfg,
+		logger:        logger,
+		models:        data.NewModels(db),
+		mailer:        mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
+		templateCache: templateCache,
 	}
 
 	// Call app.serve() to start the server.
@@ -171,3 +197,5 @@ func openDB(cfg config) (*sql.DB, error) {
 	// Return the sql.DB connection pool.
 	return db, nil
 }
+
+// smtp

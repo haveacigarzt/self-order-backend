@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"text/template"
 	"unicode"
 
 	"github.com/julienschmidt/httprouter"
@@ -166,18 +168,70 @@ func (app *application) readInt(qs url.Values, key string, defaultValue int, v *
 	return i
 }
 
-// func (app *application) background(fn func()) {
-// 	// Increment the WaitGroup counter.
-// 	app.wg.Add(1)
-// 	// Launch the background goroutine.
-// 	go func() {
-// 		// Use defer to decrement the WaitGroup counter before the goroutine returns.
-// 		defer app.wg.Done()
-// 		defer func() {
-// 			if err := recover(); err != nil {
-// 				app.logger.Error(fmt.Sprintf("%v", err))
-// 			}
-// 		}()
-// 		fn()
-// 	}()
-// }
+func (app *application) background(fn func()) {
+	// Increment the WaitGroup counter.
+	app.wg.Add(1)
+	// Launch the background goroutine.
+	go func() {
+		// Use defer to decrement the WaitGroup counter before the goroutine returns.
+		defer app.wg.Done()
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.Error(fmt.Sprintf("%v", err))
+			}
+		}()
+		fn()
+	}()
+}
+
+func (app *application) render(
+	w http.ResponseWriter,
+	r *http.Request,
+	status int,
+	page string,
+	data any,
+) error {
+	ts, ok := app.templateCache[page]
+	if !ok {
+		return fmt.Errorf("template %s tidak ditemukan", page)
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+
+	return ts.ExecuteTemplate(w, page, data)
+}
+
+func newTemplateCache() (map[string]*template.Template, error) {
+	cache := make(map[string]*template.Template)
+
+	funcMap := template.FuncMap{
+		"toJSON": func(v any) string {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return ""
+			}
+
+			return base64.StdEncoding.EncodeToString(b)
+		},
+	}
+
+	ts, err := template.New("").Funcs(funcMap).ParseFiles(
+		"./internal/views/produk.tmpl",
+		"./internal/views/produk-list.tmpl",
+		"./internal/views/back-to-top.tmpl",
+		"./internal/views/footer.tmpl",
+		"./internal/views/modal-produk.tmpl",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	cache["produk"] = ts
+	cache["produk-list"] = ts
+	cache["back-to-top"] = ts
+	cache["footer"] = ts
+	cache["modal-produk"] = ts
+
+	return cache, nil
+}

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// ScopeActivation     = "activation"
+	ScopeActivation     = "activation"
 	ScopeAuthentication = "authentication" // Include a new authentication scope.
 )
 

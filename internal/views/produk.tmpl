@@ -1,0 +1,35 @@
+{{define "produk"}}
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/htmx/4.0.1/htmx.min.js"
+      integrity="sha512-xspa3t9MrzLkwdfo67LbsusW+t3z2LG1cjkA8seYXH3kWokLTlZGrNPNGZJnHF9apv32h6Q4R8XWBCW4EiNptA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <link rel="stylesheet" href="/static/css/custom.css">
+    <title>Daftar Produk</title>
+  </head>
+  <body class="min-h-screen">
+    <main class="mx-auto max-w-125 min-w-0 bg-neutral-100 p-5 mb-16">
+        <div id="produk-list">
+          {{template "produk-list" .}}
+        </div>
+        {{template "modal-produk" .}}
+        {{template "back-to-top" .}}
+      </main>
+    <footer class="mx-auto max-w-125 min-w-0 flex gap-3 fixed bottom-0 inset-x-0 z-50 bg-neutral-100 px-5 py-3 border-t border-gray-300">
+      {{template "footer" .}}
+    </footer>
+  </body>
+  <script src="/static/js/table.js">
+  </script>
+</html>
+{{ end }}
