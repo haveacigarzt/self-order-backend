@@ -16,6 +16,9 @@ github.com/lib/pq/internal/proto
 github.com/lib/pq/oid
 github.com/lib/pq/pqerror
 github.com/lib/pq/scram
+# github.com/shopspring/decimal v1.6.0
+## explicit; go 1.10
+github.com/shopspring/decimal
 # github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 ## explicit
 github.com/tomasen/realip

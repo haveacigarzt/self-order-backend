@@ -1,0 +1,2 @@
+ALTER TABLE pesanan_produk
+DROP CONSTRAINT pesanan_produk_unique;

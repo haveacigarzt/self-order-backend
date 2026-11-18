@@ -37,6 +37,7 @@ type config struct {
 		maxIdleConns int
 		maxIdleTime  time.Duration
 	}
+	maxMeja int
 
 	// Add a new limiter struct containing fields for the requests-per-second and burst
 	// values, and a boolean field which we can use to enable/disable rate limiting
@@ -76,6 +77,7 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "development", "Environment (development|staging|production)")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "PostgreSQL DSN")
+	flag.IntVar(&cfg.maxMeja, "max-meja", 30, "Jumlah maksimal meja")
 
 	// Read the connection pool settings from command-line flags into the config struct.
 	// Notice that the default values we're using are the ones we discussed above?
@@ -85,8 +87,8 @@ func main() {
 
 	// Create command line flags to read the setting values into the config struct.
 	// Notice that we use true as the default for the 'enabled' setting?
-	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
-	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 5, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 10, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiter")
 
 	flag.StringVar(&cfg.smtp.host, "smtp-host", "smtp.gmail.com", "SMTP host")

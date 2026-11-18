@@ -1,22 +1,51 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
+	"github.com/shopspring/decimal"
 	"selforder.pramana.net/internal/data"
 	"selforder.pramana.net/internal/validator"
 )
 
+// func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request) {
+// 	id, err := app.readIDParam(r)
+// 	if err != nil {
+// 		app.notFoundResponse(w, r)
+// 		return
+// 	}
+
+// 	produk, err := app.models.Produk.Get(id)
+// 	if err != nil {
+// 		switch {
+// 		case errors.Is(err, data.ErrRecordNotFound):
+// 			app.notFoundResponse(w, r)
+// 		default:
+// 			app.serverErrorResponse(w, r, err)
+// 		}
+// 		return
+// 	}
+
+// 	// Encode the struct to JSON and send it as the HTTP response.
+// 	err = app.writeJSON(w, http.StatusOK, envelope{"produk": produk}, nil)
+// 	if err != nil {
+// 		app.serverErrorResponse(w, r, err)
+// 	}
+
+// }
+
 func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := app.readIDParam(r)
+	slug, err := app.readStringParam(r, "slug")
 	if err != nil {
 		app.notFoundResponse(w, r)
 		return
 	}
 
-	produk, err := app.models.Produk.Get(id)
+	produk, err := app.models.Produk.GetBrief(slug)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -28,7 +57,8 @@ func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	// Encode the struct to JSON and send it as the HTTP response.
-	err = app.writeJSON(w, http.StatusOK, envelope{"produk": produk}, nil)
+	// err = app.writeJSON(w, http.StatusOK, envelope{"produk": produk}, nil)
+	err = app.render(w, r, http.StatusOK, "single-produk", produk)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -183,6 +213,12 @@ func (app *application) deleteProdukHandler(w http.ResponseWriter, r *http.Reque
 }
 
 func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request) {
+	nomorMeja, err := app.readNomorMeja(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
 	var input struct {
 		Nama string
 		data.Filters
@@ -211,16 +247,38 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// err = app.writeJSON(w, http.StatusOK, envelope{"daftar_produk": produkList, "metadata": metadata}, nil)
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// }
+	// Ambil pesanan
+	var pesananProduk *[]data.PesananProduk
+	var total decimal.Decimal
+	var totalQty uint16
+	produkQty := make(map[int64]uint16)
+	produkCatatan := make(map[int64]string)
+
+	cookie, err := r.Cookie("transaction_id")
+	if err == nil && cookie.Value != "" {
+		pesananProduk, err = app.models.Pesanan.GetPesananProdukByIDTransaksi(cookie.Value)
+		if err != nil {
+			app.serverErrorResponse(w, r, err)
+			return
+		}
+		for _, item := range *pesananProduk {
+			total = total.Add(item.Subtotal)
+			totalQty += item.Qty
+			produkQty[item.ProdukID] = item.Qty
+			produkCatatan[item.ProdukID] = item.Catatan
+		}
+	} else {
+		pesananProduk = &[]data.PesananProduk{}
+	}
+
 	groups := make([]data.ProdukGroup, 0)
 
 	groupIndex := make(map[int64]int)
 
 	for _, produk := range produkList {
 		index, exists := groupIndex[produk.GrupID]
+		produk.Qty = produkQty[produk.ID]
+		produk.Catatan = produkCatatan[produk.ID]
 
 		if !exists {
 			index = len(groups)
@@ -238,25 +296,30 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	viewData := map[string]any{
-		"Groups":   groups,
-		"Metadata": metadata,
+		"Groups":        groups,
+		"Metadata":      metadata,
+		"NomorMeja":     nomorMeja,
+		"PesananProduk": pesananProduk,
+		"Total":         formatRupiah(total),
+		"TotalQty":      totalQty,
+	}
+	result, err := json.MarshalIndent(total, "", "  ")
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	// b, err := json.MarshalIndent(viewData, "", "    ")
-	// if err != nil {
-	// 	app.serverErrorResponse(w, r, err)
-	// 	return
-	// }
+	fmt.Println(string(result))
 
-	// fmt.Println(string(b))
+	templateName := "produk"
 
 	if r.Header.Get("HX-Request") == "true" {
-		err = app.render(w, r, http.StatusOK, "produk-list", viewData)
-	} else {
-		err = app.render(w, r, http.StatusOK, "produk", viewData)
+		templateName = "produk-list"
 	}
 
+	err = app.render(w, r, http.StatusOK, templateName, viewData)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
+		return
 	}
 }

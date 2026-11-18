@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +17,7 @@ import (
 	"unicode"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/shopspring/decimal"
 	"selforder.pramana.net/internal/validator"
 )
 
@@ -27,6 +31,28 @@ func (app *application) readIDParam(r *http.Request) (int64, error) {
 		return 0, errors.New("invalid id parameter")
 	}
 	return id, nil
+}
+
+func (app *application) readNomorMeja(r *http.Request) (int, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+
+	nomorMeja, err := strconv.Atoi(params.ByName("nomor_meja"))
+	if err != nil || nomorMeja < 1 || nomorMeja > app.config.maxMeja {
+		return 0, errors.New("invalid nomor meja")
+	}
+
+	return nomorMeja, nil
+}
+
+func (app *application) readStringParam(r *http.Request, key string) (string, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	param := params.ByName(key)
+
+	if param == "" {
+		return "", errors.New("invalid " + key + " parameter")
+	}
+
+	return param, nil
 }
 
 // Change the data parameter to have the type envelope instead of any.
@@ -196,10 +222,32 @@ func (app *application) render(
 		return fmt.Errorf("template %s tidak ditemukan", page)
 	}
 
+	buf := new(bytes.Buffer)
+
+	err := ts.ExecuteTemplate(buf, page, data)
+	if err != nil {
+		return err
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 
-	return ts.ExecuteTemplate(w, page, data)
+	_, err = buf.WriteTo(w)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func generateRandomString() (string, error) {
+	bytes := make([]byte, 32) // 256-bit
+
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(bytes), nil
 }
 
 func newTemplateCache() (map[string]*template.Template, error) {
@@ -222,6 +270,9 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		"./internal/views/back-to-top.tmpl",
 		"./internal/views/footer.tmpl",
 		"./internal/views/modal-produk.tmpl",
+		"./internal/views/modal-cart.tmpl",
+		"./internal/views/error.tmpl",
+		"./internal/views/single-produk.tmpl",
 	)
 	if err != nil {
 		return nil, err
@@ -232,6 +283,25 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	cache["back-to-top"] = ts
 	cache["footer"] = ts
 	cache["modal-produk"] = ts
+	cache["modal-cart"] = ts
+	cache["error"] = ts
+	cache["single-produk"] = ts
 
 	return cache, nil
+}
+
+func formatRupiah(harga decimal.Decimal) string {
+	s := harga.StringFixed(0)
+
+	negatif := ""
+	if strings.HasPrefix(s, "-") {
+		negatif = "-"
+		s = strings.TrimPrefix(s, "-")
+	}
+
+	for i := len(s) - 3; i > 0; i -= 3 {
+		s = s[:i] + "." + s[i:]
+	}
+
+	return negatif + "Rp " + s
 }

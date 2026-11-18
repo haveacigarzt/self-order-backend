@@ -23,6 +23,8 @@ type Produk struct {
 	UpdatedAt time.Time `json:"-"`
 	Version   int32     `json:"version"`
 	GrupNama  string    `json:"grup_nama,omitempty"`
+	Qty       uint16    `json:"qty"`
+	Catatan   string    `json:"catatan"`
 }
 
 type ProdukGroup struct {
@@ -109,6 +111,42 @@ func (m ProdukModel) Get(id int64) (*Produk, error) {
 		}
 	}
 	// Otherwise, return a pointer to the Movie struct.
+	return &produk, nil
+}
+
+func (m ProdukModel) GetBrief(slug string) (*Produk, error) {
+	if slug == "" {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+	SELECT id, nama, deskripsi, slug, stok, harga
+	FROM produk
+	WHERE slug = $1`
+
+	var produk Produk
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, slug).Scan(
+		&produk.ID,
+		&produk.Nama,
+		&produk.Deskripsi,
+		&produk.Slug,
+		&produk.Stok,
+		&produk.Harga,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
 	return &produk, nil
 }
 

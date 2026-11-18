@@ -20,6 +20,7 @@ type Models struct {
 	Users       UserModel       // Add a new Users field.
 	Tokens      TokenModel      // Add a new Tokens field.
 	Permissions PermissionModel // Add a new Permissions field.
+	Pesanan     PesananModel
 }
 
 // For ease of use, we also add a New() method which returns a Models struct containing
@@ -31,5 +32,6 @@ func NewModels(db *sql.DB) Models {
 		Users:       UserModel{DB: db},       // Initialize a new UserModel instance.
 		Tokens:      TokenModel{DB: db},      // Initialize a new TokenModel instance.
 		Permissions: PermissionModel{DB: db}, // Initialize a new PermissionModel instance.
+		Pesanan:     PesananModel{DB: db},
 	}
 }

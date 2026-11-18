@@ -85,7 +85,7 @@ produkCards.forEach((card) => {
 });
 
 const modal = document.getElementById("modal_produk");
-const modalContent = document.getElementById("modal_content");
+const form = document.getElementById("modal_content");
 
 const closeButton = document.getElementById("button_close_modal");
 
@@ -94,6 +94,8 @@ const produkDeskripsi = document.getElementById("modal_produk_deskripsi");
 const produkHarga = document.getElementById("modal_produk_harga");
 
 const quantityElement = document.getElementById("modal_produk_quantity");
+const produkIdInput = document.getElementById("produk_id_input");
+const quantityInput = document.getElementById("quantity_input");
 const notesInput = document.getElementById("notes_input");
 
 const hapusButton = document.getElementById("hapus_button");
@@ -113,27 +115,25 @@ const formatRupiah = (harga) => {
   }).format(harga);
 };
 
-const pesanan = [];
-
-let totalQuantity = 0;
-let totalAmount = 0;
+let quantity = 0;
 
 // Open Modal
 function openModal(produk) {
   selectedProduk = produk;
+  quantity = selectedProduk.qty;
 
   // Isi informasi produk
-  produkNama.textContent = produk.nama;
-  produkDeskripsi.textContent = produk.deskripsi;
-  produkHarga.textContent = formatRupiah(produk.harga);
+  produkNama.textContent = selectedProduk.nama;
+  produkDeskripsi.textContent = selectedProduk.deskripsi;
+  produkHarga.textContent = formatRupiah(selectedProduk.harga);
+  produkIdInput.value = selectedProduk.id;
 
-  const p = pesanan.find((e) => e.id === selectedProduk.id);
-  if (p) {
-    quantityElement.textContent = p.quantity;
-    notesInput.value = p.notes;
-  } else {
-    quantityElement.textContent = 0;
-    notesInput.value = "";
+  quantityElement.textContent = selectedProduk.qty;
+  quantityInput.value = selectedProduk.qty;
+  notesInput.value = selectedProduk.catatan;
+
+  if (selectedProduk.qty == 0) {
+    hapusButton.disabled = true;
   }
 
   modal.classList.remove("hidden");
@@ -156,9 +156,13 @@ document.querySelectorAll(".produk-card").forEach((card) => {
   });
 });
 
+form.addEventListener("submit", () => {
+  simpanButton.disabled = true;
+});
+
 // Close Button
 closeButton.addEventListener("click", closeModal);
-simpanButton.addEventListener("click", closeModal);
+// simpanButton.addEventListener("click", closeModal);
 
 // Click Outside
 modal.addEventListener("click", (event) => {
@@ -176,83 +180,73 @@ document.addEventListener("keydown", (event) => {
 
 // Increment
 document.getElementById("button_increment").addEventListener("click", () => {
-  let p = pesanan.find((e) => e.id === selectedProduk.id);
+  quantity++;
 
-  if (p) {
-    p.quantity++;
-  } else {
-    p = {
-      ...selectedProduk,
-      quantity: 1,
-      notes: document.getElementById("notes_input").value,
-    };
-    pesanan.push(p);
-  }
+  quantityElement.textContent = quantity;
+  quantityInput.value = quantity;
 
-  quantityElement.textContent = p.quantity;
-
-  totalQuantity++;
-  if (totalQuantityElement.classList.contains("hidden")) {
-    totalQuantityElement.classList.replace("hidden", "flex");
-  }
-  totalQuantityElement.textContent = totalQuantity;
-
-  totalAmount = totalAmount + selectedProduk.harga;
-  totalAmountElement.textContent = formatRupiah(totalAmount);
-
-  console.log(pesanan);
+  simpanButton.disabled = quantity === selectedProduk.qty;
 });
 
 // Decrement
 document.getElementById("button_decrement").addEventListener("click", () => {
-  const p = pesanan.find((e) => e.id === selectedProduk.id);
+  if (quantity <= 0) return;
 
-  if (!p) return;
+  quantity--;
+  quantityElement.textContent = quantity;
+  quantityInput.value = quantity;
 
-  p.quantity--;
-
-  if (p.quantity <= 0) {
-    const index = pesanan.indexOf(p);
-    pesanan.splice(index, 1);
-
-    quantityElement.textContent = 0;
-  } else {
-    quantityElement.textContent = p.quantity;
-  }
-
-  totalQuantity--;
-  if (totalQuantity == 0) {
-    totalQuantityElement.classList.replace("flex", "hidden");
-  }
-  totalQuantityElement.textContent = totalQuantity;
-
-  totalAmount = totalAmount - selectedProduk.harga;
-  totalAmountElement.textContent = formatRupiah(totalAmount);
-
-  console.log(pesanan);
+  simpanButton.disabled = quantity === selectedProduk.qty || quantity === 0;
 });
 
-notesInput.addEventListener("input", () => {
-  const p = pesanan.find((e) => e.id === selectedProduk.id);
-  if (!p) return;
-  p.notes = event.target.value;
+notesInput.addEventListener("input", (e) => {
+  if (selectedProduk.qty === 0) return;
+  simpanButton.disabled = e.target.value === selectedProduk.catatan;
 });
 
-hapusButton.addEventListener("click", () => {
-  const p = pesanan.find((e) => e.id === selectedProduk.id);
-  if (!p) return;
-  totalQuantity = totalQuantity - p.quantity;
-  if (totalQuantity == 0) {
-    totalQuantityElement.classList.replace("flex", "hidden");
+hapusButton.addEventListener("click", async () => {
+  hapusButton.disabled = true;
+  const noMeja = hapusButton.dataset.meja;
+  try {
+    const response = await fetch(`/meja/${noMeja}/${selectedProduk.id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error("Gagal menghapus pesanan");
+    }
+    window.location.href = response.url;
+  } catch (error) {
+    console.error(error);
+    alert("Gagal menghapus pesanan. Silakan coba kembali.");
+  } finally {
+    hapusButton.disabled = false;
   }
-  totalQuantityElement.textContent = totalQuantity;
+});
 
-  totalAmount = totalAmount - selectedProduk.harga * p.quantity;
-  totalAmountElement.textContent = formatRupiah(totalAmount);
+// modal cart
+const modalCart = document.getElementById("modal_cart");
+const closeButtonCart = document.getElementById("button_close_modal_cart");
 
-  const index = pesanan.indexOf(p);
-  pesanan.splice(index, 1);
-  quantityElement.textContent = 0;
-  notesInput.value = "";
+function openModalCart(pesanan) {
+  modalCart.classList.remove("hidden");
+  document.body.classList.add("overflow-hidden");
   console.log(pesanan);
+}
+
+function closeModalCart() {
+  modalCart.classList.add("hidden");
+  document.body.classList.remove("overflow-hidden");
+}
+
+document.getElementById("cart_button").addEventListener("click", () => {
+  openModalCart(pesanan);
+});
+
+closeButtonCart.addEventListener("click", closeModalCart);
+
+// Click Outside
+modalCart.addEventListener("click", (event) => {
+  if (event.target === modalCart) {
+    closeModalCart();
+  }
 });
