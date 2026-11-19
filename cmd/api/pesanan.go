@@ -206,7 +206,7 @@ func (app *application) addPesananHandler(w http.ResponseWriter, r *http.Request
 			Name:     "transaction_id",
 			Value:    token,
 			Path:     "/",
-			MaxAge:   3600,
+			MaxAge:   18000,
 			HttpOnly: true,
 			Secure:   false, //true if HTTPS/production
 			SameSite: http.SameSiteLaxMode,

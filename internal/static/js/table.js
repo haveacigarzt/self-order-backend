@@ -85,19 +85,17 @@ produkCards.forEach((card) => {
 });
 
 const modal = document.getElementById("modal_produk");
-const form = document.getElementById("modal_content");
+const form = document.getElementById("add_menu_form");
 
 const closeButton = document.getElementById("button_close_modal");
 
 const produkNama = document.getElementById("modal_produk_nama");
 const produkDeskripsi = document.getElementById("modal_produk_deskripsi");
 const produkHarga = document.getElementById("modal_produk_harga");
-
 const quantityElement = document.getElementById("modal_produk_quantity");
 const produkIdInput = document.getElementById("produk_id_input");
 const quantityInput = document.getElementById("quantity_input");
 const notesInput = document.getElementById("notes_input");
-
 const hapusButton = document.getElementById("hapus_button");
 const simpanButton = document.getElementById("simpan_button");
 
@@ -118,27 +116,11 @@ const formatRupiah = (harga) => {
 let quantity = 0;
 
 // Open Modal
-function openModal(produk) {
-  selectedProduk = produk;
-  quantity = selectedProduk.qty;
+// function openModal(produk) {
 
-  // Isi informasi produk
-  produkNama.textContent = selectedProduk.nama;
-  produkDeskripsi.textContent = selectedProduk.deskripsi;
-  produkHarga.textContent = formatRupiah(selectedProduk.harga);
-  produkIdInput.value = selectedProduk.id;
-
-  quantityElement.textContent = selectedProduk.qty;
-  quantityInput.value = selectedProduk.qty;
-  notesInput.value = selectedProduk.catatan;
-
-  if (selectedProduk.qty == 0) {
-    hapusButton.disabled = true;
-  }
-
-  modal.classList.remove("hidden");
-  document.body.classList.add("overflow-hidden");
-}
+//   modal.classList.remove("hidden");
+//   document.body.classList.add("overflow-hidden");
+// }
 
 function closeModal() {
   modal.classList.add("hidden");
@@ -147,36 +129,36 @@ function closeModal() {
 }
 
 // Product Card Click
-document.querySelectorAll(".produk-card").forEach((card) => {
-  card.addEventListener("click", () => {
-    const encoded = card.dataset.produk;
-    const produk = JSON.parse(atob(encoded));
+// document.querySelectorAll(".produk-card").forEach((card) => {
+//   card.addEventListener("click", () => {
+//     const encoded = card.dataset.produk;
+//     const produk = JSON.parse(atob(encoded));
 
-    openModal(produk);
-  });
-});
+//     openModal(produk);
+//   });
+// });
 
 form.addEventListener("submit", () => {
   simpanButton.disabled = true;
 });
 
 // Close Button
-closeButton.addEventListener("click", closeModal);
+// closeButton.addEventListener("click", closeModal);
 // simpanButton.addEventListener("click", closeModal);
 
 // Click Outside
-modal.addEventListener("click", (event) => {
-  if (event.target === modal) {
-    closeModal();
-  }
-});
+// modal.addEventListener("click", (event) => {
+//   if (event.target === modal) {
+//     closeModal();
+//   }
+// });
 
 // Escape
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && !modal.classList.contains("hidden")) {
-    closeModal();
-  }
-});
+// document.addEventListener("keydown", (event) => {
+//   if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+//     closeModal();
+//   }
+// });
 
 // Increment
 document.getElementById("button_increment").addEventListener("click", () => {
@@ -227,10 +209,9 @@ hapusButton.addEventListener("click", async () => {
 const modalCart = document.getElementById("modal_cart");
 const closeButtonCart = document.getElementById("button_close_modal_cart");
 
-function openModalCart(pesanan) {
+function openModalCart() {
   modalCart.classList.remove("hidden");
   document.body.classList.add("overflow-hidden");
-  console.log(pesanan);
 }
 
 function closeModalCart() {
@@ -239,7 +220,7 @@ function closeModalCart() {
 }
 
 document.getElementById("cart_button").addEventListener("click", () => {
-  openModalCart(pesanan);
+  openModalCart();
 });
 
 closeButtonCart.addEventListener("click", closeModalCart);
@@ -249,4 +230,64 @@ modalCart.addEventListener("click", (event) => {
   if (event.target === modalCart) {
     closeModalCart();
   }
+});
+
+//
+const addMenu = document.getElementById("add-menu");
+
+function openAddMenu(produk) {
+  const url = new URL(window.location.href);
+
+  url.searchParams.set("id", produk.id);
+  url.hash = "add-menu";
+
+  history.pushState({}, "", url);
+
+  addMenu.classList.add("active");
+  document.body.style.overflow = "hidden";
+
+  selectedProduk = produk;
+  quantity = selectedProduk.qty;
+
+  // Isi informasi produk
+  produkNama.textContent = selectedProduk.nama;
+  produkDeskripsi.textContent = selectedProduk.deskripsi;
+  produkHarga.textContent = formatRupiah(selectedProduk.harga);
+  produkIdInput.value = selectedProduk.id;
+
+  quantityElement.textContent = selectedProduk.qty;
+  quantityInput.value = selectedProduk.qty;
+  notesInput.value = selectedProduk.catatan;
+
+  if (selectedProduk.qty == 0) {
+    hapusButton.disabled = true;
+  }
+}
+
+function closeAddMenu() {
+  document.body.style.overflow = "";
+  history.back();
+}
+
+document.getElementById("close_page").addEventListener("click", closeAddMenu);
+
+window.addEventListener("popstate", () => {
+  const url = new URL(window.location.href);
+
+  const isOpen = url.hash === "#add-menu";
+
+  document.getElementById("add-menu").classList.toggle("active", isOpen);
+});
+
+document.querySelectorAll(".produk-card").forEach((card) => {
+  card.addEventListener("click", () => {
+    try {
+      const encoded = card.dataset.produk;
+      const produk = JSON.parse(atob(encoded));
+
+      openAddMenu(produk);
+    } catch (error) {
+      console.error("Gagal membaca data produk:", error);
+    }
+  });
 });

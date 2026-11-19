@@ -21,29 +21,51 @@
             </button>
         </div>
         <div>
-          <p class="mb-1">Nama pemesan</p>
-          <textarea id="notes_input" class="resize-none w-full border border-primary rounded p-2 text-sm placeholder:italic" placeholder="Type your message here." maxlength="255" ></textarea>
+          <div class="font-bold">
+            Related menu
+          </div>
+          <div>
+
+          </div>
         </div>
         <div>
-          <div>
-            
+          <div class="flex justify-between mb-3">
+            <div class="font-bold">Ordered items ({{ len .PesananProduk }})</div>
+            <button class="px-2 py-0.5 rounded text-sm shadow bg-primary">+ Add item</button>
+          </div>
+          <div class="border border-b-0 border-gray-300 rounded">
+            {{ range.PesananProduk }}
+              <div class="p-3 border-b border-gray-300">
+                <div class="flex justify-between gap-3">
+                  <div class="truncate">{{ .Nama }}</div>
+                  <button class="px-2 py-0.5 rounded border border-primary text-sm">Edit</button>
+                </div>
+                <div class="text-sm font-light">
+                  &times; {{ .Qty }}
+                </div>
+                <div class="text-sm italic font-light">
+                  <i class="fa-regular fa-note-sticky"></i>
+                  {{ if .Catatan }}
+                      {{ .Catatan }}
+                  {{ else }}
+                      No notes yet
+                  {{ end }}
+                </div>
+              </div>
+            {{ end }}
           </div>
         </div>
       </div>
 
       <div>
         <div class="flex justify-between gap-3 p-4 bg-gray-100 border-y border-gray-300">
-            <button id="hapus_button" class="bg-white border-primary rounded px-2 text-sm shadow">Hapus</button>
-            <div class="flex justify-center items-center gap-8">
-              <button class="w-9 h-9 rounded-full border border-gray-300" id="button_decrement">
-                <i class="fa-solid fa-minus"></i>
-              </button>
-              <h4 class="scroll-m-20 text-xl font-semibold tracking-tight" id="modal_produk_quantity"></h4>
-              <button class="w-9 h-9 rounded-full border border-gray-300" id="button_increment">
-                <i class="fa-solid fa-plus"></i>
-              </button>
+            <div>
+              <div class="-mb-1">Total</div>
+              <div class="text-2xl">{{.Total}}</div>
             </div>
-            <button id="simpan_button"  class="bg-primary rounded px-2 text-sm shadow">Simpan</button>
+            <div class="my-auto">
+              <button id="simpan_button"  class="bg-primary rounded p-3 shadow">Pembayaran</button>
+            </div>
         </div>
         <div class="bg-linear-to-t from-white to-gray-200 h-5"></div>
       </div>

@@ -39,6 +39,8 @@ type PesananProduk struct {
 	HargaSaatPesan decimal.Decimal `json:"harga_saat_pesan"`
 	Subtotal       decimal.Decimal `json:"subtotal"`
 	Catatan        string          `json:"catatan"`
+	Nama           string          `json:"nama"`
+	Slug           string          `json:"slug"`
 }
 
 type PesananProdukInput struct {
@@ -89,9 +91,10 @@ func (m PesananModel) GetPesananProdukByIDTransaksi(token string) (*[]PesananPro
 	}
 
 	query = `
-		SELECT id, produk_id, qty, catatan, harga_saat_pesan, subtotal
-		FROM pesanan_produk
-		WHERE pesanan_id = $1
+		SELECT pp.id, pp.produk_id, pp.qty, pp.catatan, pp.harga_saat_pesan, pp.subtotal, p.nama, p.slug
+		FROM pesanan_produk pp
+		JOIN produk p ON p.id = pp.produk_id
+		WHERE pp.pesanan_id = $1
 	`
 
 	rows, err := m.DB.QueryContext(ctx, query, pesanan.ID)
@@ -112,6 +115,8 @@ func (m PesananModel) GetPesananProdukByIDTransaksi(token string) (*[]PesananPro
 			&produk.Catatan,
 			&produk.HargaSaatPesan,
 			&produk.Subtotal,
+			&produk.Nama,
+			&produk.Slug,
 		)
 		if err != nil {
 			return nil, err
