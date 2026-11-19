@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss"; */
 
 :root {
   --color-primary: rgb(35, 187, 48);
@@ -95,13 +95,9 @@ button:focus-visible {
   inset: 0;
   z-index: 51;
 
-  height: 100dvh;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-
   background: white;
 
-  transform: translateY(100%);
+  transform: translateY(120%);
   transition: transform 300ms ease;
 }
 

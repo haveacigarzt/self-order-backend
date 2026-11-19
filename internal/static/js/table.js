@@ -244,7 +244,7 @@ function openAddMenu(produk) {
   history.pushState({}, "", url);
 
   addMenu.classList.add("active");
-  document.body.style.overflow = "hidden";
+  document.body.classList.add("overflow-hidden");
 
   selectedProduk = produk;
   quantity = selectedProduk.qty;
@@ -265,7 +265,8 @@ function openAddMenu(produk) {
 }
 
 function closeAddMenu() {
-  document.body.style.overflow = "";
+  console.log("closing");
+  document.body.classList.remove("overflow-hidden");
   history.back();
 }
 

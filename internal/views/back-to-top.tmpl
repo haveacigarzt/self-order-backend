@@ -1,7 +1,7 @@
 {{ define "back-to-top" }}
 <div
     id="back_to_top"
-    class="pointer-events-none fixed inset-x-0 bottom-20 z-50
+    class="pointer-events-none fixed inset-x-0 {{if ne .TotalQty 0}}bottom-21{{else}}bottom-5{{end}} z-50
         mx-auto flex w-full max-w-125 justify-end px-5 hidden"
 >
     <button
