@@ -115,50 +115,9 @@ const formatRupiah = (harga) => {
 
 let quantity = 0;
 
-// Open Modal
-// function openModal(produk) {
-
-//   modal.classList.remove("hidden");
-//   document.body.classList.add("overflow-hidden");
-// }
-
-function closeModal() {
-  modal.classList.add("hidden");
-  document.body.classList.remove("overflow-hidden");
-  selectedProduk = null;
-}
-
-// Product Card Click
-// document.querySelectorAll(".produk-card").forEach((card) => {
-//   card.addEventListener("click", () => {
-//     const encoded = card.dataset.produk;
-//     const produk = JSON.parse(atob(encoded));
-
-//     openModal(produk);
-//   });
-// });
-
 form.addEventListener("submit", () => {
   simpanButton.disabled = true;
 });
-
-// Close Button
-// closeButton.addEventListener("click", closeModal);
-// simpanButton.addEventListener("click", closeModal);
-
-// Click Outside
-// modal.addEventListener("click", (event) => {
-//   if (event.target === modal) {
-//     closeModal();
-//   }
-// });
-
-// Escape
-// document.addEventListener("keydown", (event) => {
-//   if (event.key === "Escape" && !modal.classList.contains("hidden")) {
-//     closeModal();
-//   }
-// });
 
 // Increment
 document.getElementById("button_increment").addEventListener("click", () => {
@@ -205,37 +164,11 @@ hapusButton.addEventListener("click", async () => {
   }
 });
 
-// modal cart
-const modalCart = document.getElementById("modal_cart");
-const closeButtonCart = document.getElementById("button_close_modal_cart");
-
-function openModalCart() {
-  modalCart.classList.remove("hidden");
-  document.body.classList.add("overflow-hidden");
-}
-
-function closeModalCart() {
-  modalCart.classList.add("hidden");
-  document.body.classList.remove("overflow-hidden");
-}
-
-document.getElementById("cart_button").addEventListener("click", () => {
-  openModalCart();
-});
-
-closeButtonCart.addEventListener("click", closeModalCart);
-
-// Click Outside
-modalCart.addEventListener("click", (event) => {
-  if (event.target === modalCart) {
-    closeModalCart();
-  }
-});
-
 //
 const addMenu = document.getElementById("add-menu");
 
 function openAddMenu(produk) {
+  console.log("open addmenu");
   const url = new URL(window.location.href);
 
   url.searchParams.set("id", produk.id);
@@ -265,8 +198,21 @@ function openAddMenu(produk) {
 }
 
 function closeAddMenu() {
-  console.log("closing");
+  console.log("closing addmenu");
+
+  document.getElementById("add-menu").classList.remove("active");
+
   document.body.classList.remove("overflow-hidden");
+
+  history.back();
+}
+
+function closeCart() {
+  console.log("closing cart");
+  document.getElementById("cart").classList.remove("active");
+
+  document.body.classList.remove("overflow-hidden");
+
   history.back();
 }
 
@@ -275,9 +221,17 @@ document.getElementById("close_page").addEventListener("click", closeAddMenu);
 window.addEventListener("popstate", () => {
   const url = new URL(window.location.href);
 
-  const isOpen = url.hash === "#add-menu";
+  const isOpenAddMenu = url.hash === "#add-menu";
+  const isOpenCart = url.hash === "#cart";
 
-  document.getElementById("add-menu").classList.toggle("active", isOpen);
+  document.getElementById("add-menu").classList.toggle("active", isOpenAddMenu);
+
+  document.getElementById("cart").classList.toggle("active", isOpenCart);
+
+  document.body.classList.toggle(
+    "overflow-hidden",
+    isOpenAddMenu || isOpenCart,
+  );
 });
 
 document.querySelectorAll(".produk-card").forEach((card) => {
@@ -287,6 +241,44 @@ document.querySelectorAll(".produk-card").forEach((card) => {
       const produk = JSON.parse(atob(encoded));
 
       openAddMenu(produk);
+    } catch (error) {
+      console.error("Gagal membaca data produk:", error);
+    }
+  });
+});
+
+//
+const cart = document.getElementById("cart");
+
+function openCart() {
+  console.log("open");
+  const url = new URL(window.location.href);
+
+  url.hash = "cart";
+
+  history.pushState({}, "", url);
+
+  cart.classList.add("active");
+  document.body.classList.add("overflow-hidden");
+}
+
+document.getElementById("close_cart").addEventListener("click", closeCart);
+document.getElementById("add_item_cart").addEventListener("click", closeCart);
+document.getElementById("cart_button").addEventListener("click", openCart);
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+document.querySelectorAll(".edit-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    try {
+      closeCart();
+      const encoded = button.dataset.produk;
+      const produk = JSON.parse(atob(encoded));
+      console.log("Start");
+      sleep(300).then(() => {
+        openAddMenu(produk);
+        console.log("Executed after 1.5 seconds");
+      });
     } catch (error) {
       console.error("Gagal membaca data produk:", error);
     }

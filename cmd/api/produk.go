@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/shopspring/decimal"
@@ -264,8 +262,8 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		for _, item := range *pesananProduk {
 			total = total.Add(item.Subtotal)
 			totalQty += item.Qty
-			produkQty[item.ProdukID] = item.Qty
-			produkCatatan[item.ProdukID] = item.Catatan
+			produkQty[item.Produk.ID] = item.Qty
+			produkCatatan[item.Produk.ID] = item.Catatan
 		}
 	} else {
 		pesananProduk = &[]data.PesananProduk{}
@@ -303,13 +301,14 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		"Total":         formatRupiah(total),
 		"TotalQty":      totalQty,
 	}
-	result, err := json.MarshalIndent(total, "", "  ")
-	if err != nil {
-		log.Println(err)
-		return
-	}
 
-	fmt.Println(string(result))
+	// result, err := json.MarshalIndent(pesananProduk, "", "  ")
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return
+	// }
+
+	// fmt.Println(string(result))
 
 	templateName := "produk"
 

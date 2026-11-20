@@ -1,24 +1,22 @@
 {{ define "modal-cart"}}
 <div
-    id="modal_cart"
-    class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-black/30 p-4 backdrop-blur-xs">
+    id="cart"
+    class="add-menu mx-auto max-w-125 min-w-0">
     <div
-        class="relative w-full max-w-md max-h-[95vh] overflow-y-auto
-        rounded-lg bg-white pt-3 shadow-lg flex flex-col gap-3"
+        class="flex flex-col gap-3 p-4 max-h-screen overflow-y-scroll"
     >
-      <div class="px-4 flex flex-col gap-3">
+      <div class="flex flex-col gap-3 mb-30">
         <!-- Header -->
-        <div class=" flex items-center justify-between">
-            <h2 class="text-lg font-semibold">Pesanan anda</h2>
-
-            <button
-                id="button_close_modal_cart"
-                type="button"
-                class="flex h-9 w-9 items-center justify-center rounded-full
-                    bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-            >
-                ✕
-            </button>
+        <div class=" flex items-center">
+          <button
+          id="close_cart"
+          type="button"
+          class="flex me-3 h-9 w-9 items-center justify-center rounded-full
+          bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+          >
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <h2 class="text-lg font-semibold">Pesanan anda</h2>
         </div>
         <div>
           <div class="font-bold">
@@ -31,14 +29,14 @@
         <div>
           <div class="flex justify-between mb-3">
             <div class="font-bold">Ordered items ({{ len .PesananProduk }})</div>
-            <button class="px-2 py-0.5 rounded text-sm shadow bg-primary">+ Add item</button>
+            <button id="add_item_cart" class="px-2 py-0.5 rounded text-sm shadow bg-primary">+ Add item</button>
           </div>
           <div class="border border-b-0 border-gray-300 rounded">
             {{ range.PesananProduk }}
               <div class="p-3 border-b border-gray-300">
                 <div class="flex justify-between gap-3">
-                  <div class="truncate">{{ .Nama }}</div>
-                  <button class="px-2 py-0.5 rounded border border-primary text-sm">Edit</button>
+                  <div class="truncate">{{ .Produk.Nama }}</div>
+                  <button class="px-2 py-0.5 rounded border border-primary text-sm edit-button" data-produk="{{ .Produk | toJSON}}">Edit</button>
                 </div>
                 <div class="text-sm font-light">
                   &times; {{ .Qty }}
@@ -57,7 +55,7 @@
         </div>
       </div>
 
-      <div>
+      <div class="fixed bottom-0 inset-x-0 z-50">
         <div class="flex justify-between gap-3 p-4 bg-gray-100 border-y border-gray-300">
             <div>
               <div class="-mb-1">Total</div>
@@ -67,7 +65,7 @@
               <button id="simpan_button"  class="bg-primary rounded p-3 shadow">Pembayaran</button>
             </div>
         </div>
-        <div class="bg-linear-to-t from-white to-gray-200 h-5"></div>
+        <div class="bg-linear-to-t from-white to-gray-200 h-3"></div>
       </div>
     </div>
 </div>
