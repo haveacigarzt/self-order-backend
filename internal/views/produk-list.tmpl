@@ -19,13 +19,13 @@
     </nav>
     {{ range.Groups }}
         <h2 id="grup-{{ .GrupID }}" class="mb-2 scroll-mt-16 mt-4 uppercase font-bold">{{.GrupNama}}</h2>
-        <div class="grid grid-cols-2 gap-4" >
+        <div class="grid grid-cols-2 gap-4">
             {{ range.Produk }}
                 <div class="flex flex-col gap-2 rounded-lg shadow-md p-3 bg-white produk-card relative cursor-pointer" data-produk="{{. | toJSON}}">
                     <span id="badge-{{ .ID }}" class="badge badge-0 shadow {{if eq .Qty 0}}hidden{{end}}">{{ .Qty }}</span>
                     <img src="https://placehold.co/600x400" alt="" class="aspect-square object-cover rounded-lg">
                     <div>
-                        <p class="truncate">{{.Nama}}</p>
+                        <p class="truncate">{{ .Nama }}</p>
                         <p data-harga={{ .Harga }}></p>
                     </div>
                 </div>

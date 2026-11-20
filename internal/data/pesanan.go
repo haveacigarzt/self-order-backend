@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -35,12 +36,9 @@ type Pesanan struct {
 type PesananProduk struct {
 	ID             int64           `json:"id"`
 	Produk         Produk          `json:"produk"`
-	Qty            uint16          `json:"qty"`
 	HargaSaatPesan decimal.Decimal `json:"harga_saat_pesan"`
 	Subtotal       decimal.Decimal `json:"subtotal"`
-	Catatan        string          `json:"catatan"`
-	Nama           string          `json:"nama"`
-	Slug           string          `json:"slug"`
+	ProdukTerkait  []Produk        `json:"produk_terkait"`
 }
 
 type PesananProdukInput struct {
@@ -91,10 +89,50 @@ func (m PesananModel) GetPesananProdukByIDTransaksi(token string) (*[]PesananPro
 	}
 
 	query = `
-		SELECT pp.id, pp.produk_id, pp.qty, pp.catatan, pp.harga_saat_pesan, pp.subtotal, p.nama, p.slug, p.deskripsi, p.stok, p.harga
-		FROM pesanan_produk pp
-		JOIN produk p ON p.id = pp.produk_id
-		WHERE pp.pesanan_id = $1
+    SELECT
+        pp.id,
+        pp.produk_id,
+        pp.qty,
+        pp.catatan,
+        pp.harga_saat_pesan,
+        pp.subtotal,
+        p.nama,
+        p.slug,
+        p.deskripsi,
+        p.stok,
+        p.harga,
+        p.version,
+        p.grup_id,
+        COALESCE(
+				(
+						SELECT jsonb_agg(
+								jsonb_build_object(
+										'id', pr.id,
+										'nama', pr.nama,
+										'slug', pr.slug,
+										'deskripsi', pr.deskripsi,
+										'stok', pr.stok,
+										'harga', pr.harga,
+										'version', pr.version,
+										'grup_id', pr.grup_id
+								)
+								ORDER BY pr.id
+						)
+						FROM produk_terkait pt
+						JOIN produk pr ON pr.id = pt.produk_id_b
+						WHERE pt.produk_id_a = pp.produk_id
+						AND NOT EXISTS (
+								SELECT 1
+								FROM pesanan_produk pp2
+								WHERE pp2.pesanan_id = pp.pesanan_id
+								AND pp2.produk_id = pr.id
+						)
+				),
+				'[]'::jsonb
+		) AS produk_terkait
+    FROM pesanan_produk pp
+    JOIN produk p ON p.id = pp.produk_id
+    WHERE pp.pesanan_id = $1
 	`
 
 	rows, err := m.DB.QueryContext(ctx, query, pesanan.ID)
@@ -107,12 +145,13 @@ func (m PesananModel) GetPesananProdukByIDTransaksi(token string) (*[]PesananPro
 
 	for rows.Next() {
 		var produk PesananProduk
+		var produkTerkaitJSON []byte
 
 		err := rows.Scan(
 			&produk.ID,
 			&produk.Produk.ID,
-			&produk.Qty,
-			&produk.Catatan,
+			&produk.Produk.Qty,
+			&produk.Produk.Catatan,
 			&produk.HargaSaatPesan,
 			&produk.Subtotal,
 			&produk.Produk.Nama,
@@ -120,8 +159,15 @@ func (m PesananModel) GetPesananProdukByIDTransaksi(token string) (*[]PesananPro
 			&produk.Produk.Deskripsi,
 			&produk.Produk.Stok,
 			&produk.Produk.Harga,
+			&produk.Produk.Version,
+			&produk.Produk.GrupID,
+			&produkTerkaitJSON,
 		)
 		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(produkTerkaitJSON, &produk.ProdukTerkait); err != nil {
 			return nil, err
 		}
 

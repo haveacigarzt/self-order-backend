@@ -277,6 +277,7 @@ document.querySelectorAll(".edit-button").forEach((button) => {
       console.log("Start");
       sleep(300).then(() => {
         openAddMenu(produk);
+        console.log(produk);
         console.log("Executed after 1.5 seconds");
       });
     } catch (error) {
