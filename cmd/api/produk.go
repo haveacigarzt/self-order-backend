@@ -45,7 +45,7 @@ func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	produk, err := app.models.Produk.GetBrief(slug)
+	produk, err := app.models.Produk.Get(slug)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -56,8 +56,14 @@ func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Encode the struct to JSON and send it as the HTTP response.
-	// err = app.writeJSON(w, http.StatusOK, envelope{"produk": produk}, nil)
+	result, err := json.MarshalIndent(produk, "", "  ")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	fmt.Println(string(result))
+
 	err = app.render(w, r, http.StatusOK, "single-produk", produk)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
@@ -118,7 +124,7 @@ func (app *application) updateProdukHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	produk, err := app.models.Produk.Get(id)
+	produk, err := app.models.Produk.GetById(id)
 	if err != nil {
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
@@ -313,10 +319,6 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 	fmt.Println(string(result))
 
 	templateName := "produk"
-
-	if r.Header.Get("HX-Request") == "true" {
-		templateName = "produk-list"
-	}
 
 	err = app.render(w, r, http.StatusOK, templateName, viewData)
 	if err != nil {

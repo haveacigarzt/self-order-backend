@@ -4,13 +4,13 @@
     >
     <form
         id="add_menu_form"
-        class="flex flex-col gap-3 p-4 max-h-screen overflow-y-scroll"
+        class="flex flex-col gap-3 py-4 max-h-screen overflow-y-scroll"
         action="/meja/{{.NomorMeja}}" method="post"
     >
         <input type="hidden" name="produk_id" id="produk_id_input">
         <div class="flex flex-col gap-3 mb-25">
             <!-- Header -->
-            <div class="mb-2 flex items-center justify-between">
+            <div class="px-4 flex items-center justify-between">
                 <h2 class="text-lg font-semibold">Atur pesanan</h2>
 
                 <button
@@ -22,9 +22,8 @@
                     ✕
                 </button>
             </div>
-            <div id="pesanan_response" class="hidden">
-            </div>
-            <div class="shadow rounded-lg">
+            <div class="bg-linear-to-t from-white to-gray-200 h-2"></div>
+            <div class="mx-4 shadow rounded-lg">
             <!-- Product Image -->
             <div class="relative">
                 <img
@@ -61,10 +60,9 @@
                 ></p>
             </div>
             </div>
-
-            <div>
-            <p class="mb-1">Notes (Opsional)</p>
-            <textarea name="catatan" id="notes_input" class="resize-none w-full border border-primary rounded p-2 text-sm placeholder:italic" placeholder="Type your message here." maxlength="255" ></textarea>
+            <div class="px-4">
+                <p class="mb-1">Notes (Opsional)</p>
+                <textarea name="catatan" id="notes_input" class="resize-none w-full border border-primary rounded p-2 text-sm placeholder:italic" placeholder="Type your message here." maxlength="255" ></textarea>
             </div>
         </div>
 

@@ -33,10 +33,12 @@ func (app *application) routes() http.Handler {
 	// router.HandlerFunc(http.MethodGet, "/v1/produk", app.requireActivatedUser(app.listProdukHandler))
 
 	router.HandlerFunc(http.MethodGet, "/meja/:nomor_meja", app.listProdukHandler)
-	router.HandlerFunc(http.MethodGet, "/meja/:nomor_meja/:slug", app.showProdukHandler)
 
 	router.HandlerFunc(http.MethodPost, "/meja/:nomor_meja", app.addPesananHandler)
 	router.HandlerFunc(http.MethodDelete, "/meja/:nomor_meja/:id", app.removePesananHandler)
+
+	router.HandlerFunc(http.MethodGet, "/admin", app.adminMainHandler)
+	router.HandlerFunc(http.MethodGet, "/admin/produk/:slug", app.showProdukHandler)
 
 	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)

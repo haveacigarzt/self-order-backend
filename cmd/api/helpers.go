@@ -273,6 +273,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		"./internal/views/modal-cart.tmpl",
 		"./internal/views/error.tmpl",
 		"./internal/views/single-produk.tmpl",
+		"./internal/views/admin-main.tmpl",
+		"./internal/views/produk-list-admin.tmpl",
 	)
 	if err != nil {
 		return nil, err
@@ -286,6 +288,8 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	cache["modal-cart"] = ts
 	cache["error"] = ts
 	cache["single-produk"] = ts
+	cache["admin-main"] = ts
+	cache["produk-list-admin"] = ts
 
 	return cache, nil
 }

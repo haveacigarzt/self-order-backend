@@ -204,16 +204,24 @@ function closeAddMenu() {
 
   document.body.classList.remove("overflow-hidden");
 
-  history.back();
+  history.replaceState(
+    {},
+    "",
+    window.location.pathname + window.location.search,
+  );
 }
 
 function closeCart() {
   console.log("closing cart");
-  document.getElementById("cart").classList.remove("active");
 
+  document.getElementById("cart").classList.remove("active");
   document.body.classList.remove("overflow-hidden");
 
-  history.back();
+  history.replaceState(
+    {},
+    "",
+    window.location.pathname + window.location.search,
+  );
 }
 
 document.getElementById("close_page").addEventListener("click", closeAddMenu);

@@ -4,12 +4,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/htmx/4.0.1/htmx.min.js"
-      integrity="sha512-xspa3t9MrzLkwdfo67LbsusW+t3z2LG1cjkA8seYXH3kWokLTlZGrNPNGZJnHF9apv32h6Q4R8XWBCW4EiNptA=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" integrity="sha512-QeR2VH+lsBE5LSAe1Q5EnTBbe7XTBubt8dG93Y7gidSgdMCr8nVqKcfKAMyN96SV8KDbZVTDXChatu5G2KQGzg==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -18,11 +12,54 @@
     <title>Daftar Produk</title>
   </head>
   <body class="min-h-screen">
+    <header class="mx-auto max-w-125 min-w-0 bg-white px-5 py-3 border-b border-gray-300">
+      <div class="flex items-center">
+        <div class="flex-1 flex justify-start">
+          <div class="text-sm font-bold px-2 py-1 rounded-lg border border-gray-300 bg-white shadow-sm">
+            <i class="fa-solid fa-bars"></i>
+          </div>
+        </div>
+        <div class="flex-3 flex justify-center">
+          <img
+              src="/static/img/logo-white.png"
+              alt="Logo"
+              class="w-40 h-12 object-fill"
+          />
+        </div>
+        <div class="flex-1 flex justify-end">
+          <div class="text-sm font-bold px-2 py-1 rounded-lg border border-gray-300 bg-white shadow-sm">
+            Admin
+          </div>
+        </div>
+      </div>
+    </header>
     <main class="mx-auto max-w-125 min-w-0 bg-neutral-100 p-5 mb-16">
-      {{.ID}}
+      <div class="flex flex-col gap-3">
+        <div>
+          {{.Nama}}
+        </div>
+        <div class="border rounded p-3">
+          <form action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="grid grid-cols-2 gap-4 mb-5">
+              {{ range $i := 5 }}
+              <div class="flex flex-col gap-2">
+                <label class="mb-0 text-sm font-medium" for="gambar_{{ $i }}">{{ if eq $i 0 }}Thumbnail{{ else }}Gambar {{ $i }}{{ end }}</label>
+                <div class="border rounded">
+                  output
+                </div>
+                <input class="cursor-pointer border px-2 py-1 rounded bg-gray-300 shadow text-sm w-full" id="gambar_{{ $i }}" name="gambar-{{ $i }}" type="file" accept="image/*">
+              </div>          
+              {{ end }}
+            </div>
+            <div class="flex justify-center">
+              <button type="submit" class="rounded bg-primary shadow px-3 py-2">Simpan</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </main>
   </body>
-  <script src="/static/js/table.js">
+  <script src="/static/js/admin.js">
   </script>
 </html>
 {{ end }}

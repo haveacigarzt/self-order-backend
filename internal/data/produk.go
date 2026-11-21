@@ -74,8 +74,48 @@ func (m ProdukModel) Insert(produk *Produk) error {
 }
 
 // Add a placeholder method for fetching a specific record from the movies table.
-func (m ProdukModel) Get(id int64) (*Produk, error) {
-	if id < 1 {
+func (m ProdukModel) Get(slug string) (*Produk, error) {
+	if slug == "" {
+		return nil, ErrRecordNotFound
+	}
+
+	query := `
+	SELECT p.id, p.created_at, p.nama, p.deskripsi, p.grup_id, gp.nama AS grup_nama, p.slug, p.stok, p.harga, p.version
+	FROM produk p JOIN grup_produk gp ON p.grup_id = gp.id
+	WHERE p.slug = $1`
+
+	var produk Produk
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, slug).Scan(
+		&produk.ID,
+		&produk.CreatedAt,
+		&produk.Nama,
+		&produk.Deskripsi,
+		&produk.GrupID,
+		&produk.GrupNama,
+		&produk.Slug,
+		&produk.Stok,
+		&produk.Harga,
+		&produk.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+	// Otherwise, return a pointer to the Movie struct.
+	return &produk, nil
+}
+
+func (m ProdukModel) GetById(id int64) (*Produk, error) {
+	if id == 0 {
 		return nil, ErrRecordNotFound
 	}
 
