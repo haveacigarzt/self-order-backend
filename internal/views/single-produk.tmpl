@@ -36,30 +36,59 @@
     <main class="mx-auto max-w-125 min-w-0 bg-neutral-100 p-5 mb-16">
       <div class="flex flex-col gap-3">
         <div>
-          {{.Nama}}
+          {{.Produk.Nama}}
         </div>
-        <div class="border rounded p-3">
-          <form action="/upload" method="POST" enctype="multipart/form-data">
-            <div class="grid grid-cols-2 gap-4 mb-5">
-              {{ range $i := 5 }}
-              <div class="flex flex-col gap-2">
-                <label class="mb-0 text-sm font-medium" for="gambar_{{ $i }}">{{ if eq $i 0 }}Thumbnail{{ else }}Gambar {{ $i }}{{ end }}</label>
-                <div class="border rounded">
-                  output
+
+        <div class="grid grid-cols-2 gap-4 mb-5">
+          {{ $produk := .Produk }}
+
+          {{ range .Produk.Gambar }}
+            <div class="flex flex-col gap-2 border rounded p-3">
+              <div class="border rounded">
+                {{ if .FilePath }}
+                  <img
+                    src="/static/uploads/{{ .FilePath }}"
+                    alt="Gambar produk"
+                    class="aspect-square object-cover rounded-lg w-full"
+                  >
+                {{ else }}
+                  <div class="aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
+                    <i class="fa-solid fa-image text-3xl text-gray-400"></i>
+                  </div>
+                {{ end }}
+              </div>
+              <form
+                action="/admin/produk/{{ $produk.ID }}/gambar/{{ .Urutan }}"
+                method="POST"
+                enctype="multipart/form-data"
+              >
+                <div class="flex flex-col gap-2">
+                  <label
+                    class="mb-0 text-sm font-medium"
+                    for="gambar_{{ .Urutan }}"
+                  >
+                    {{ if eq .Urutan 1 }}Thumbnail{{ else }}Gambar {{ .Urutan }}{{ end }}
+                  </label>
+
+                  <input
+                    class="cursor-pointer border px-2 py-1 rounded bg-gray-300 shadow text-sm w-full"
+                    id="gambar_{{ .Urutan }}"
+                    name="gambar"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    required
+                  >
+
+                  <button type="submit" class="rounded bg-primary shadow py-1">
+                    Simpan
+                  </button>
                 </div>
-                <input class="cursor-pointer border px-2 py-1 rounded bg-gray-300 shadow text-sm w-full" id="gambar_{{ $i }}" name="gambar-{{ $i }}" type="file" accept="image/*">
-              </div>          
-              {{ end }}
+              </form>
             </div>
-            <div class="flex justify-center">
-              <button type="submit" class="rounded bg-primary shadow px-3 py-2">Simpan</button>
-            </div>
-          </form>
+          {{ end }}
         </div>
       </div>
     </main>
   </body>
-  <script src="/static/js/admin.js">
-  </script>
 </html>
 {{ end }}

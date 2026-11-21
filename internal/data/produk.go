@@ -12,19 +12,25 @@ import (
 )
 
 type Produk struct {
-	ID        int64     `json:"id"`
-	GrupID    int64     `json:"grup_id"`
-	Nama      string    `json:"nama"`
-	Slug      string    `json:"slug"`
-	Deskripsi string    `json:"deskripsi"`
-	Harga     uint32    `json:"harga"`
-	Stok      uint16    `json:"stok"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
-	Version   int32     `json:"version"`
-	GrupNama  string    `json:"grup_nama,omitempty"`
-	Qty       uint16    `json:"qty"`
-	Catatan   string    `json:"catatan"`
+	ID        int64          `json:"id"`
+	GrupID    int64          `json:"grup_id"`
+	Nama      string         `json:"nama"`
+	Slug      string         `json:"slug"`
+	Deskripsi string         `json:"deskripsi"`
+	Harga     uint32         `json:"harga"`
+	Stok      uint16         `json:"stok"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	Version   int32          `json:"version"`
+	GrupNama  string         `json:"grup_nama,omitempty"`
+	Qty       uint16         `json:"qty"`
+	Catatan   string         `json:"catatan"`
+	Gambar    []ProdukGambar `json:"gambar"`
+}
+
+type ProdukGambar struct {
+	FilePath string `json:"filepath"`
+	Urutan   int16  `json:"urutan"`
 }
 
 type ProdukGroup struct {

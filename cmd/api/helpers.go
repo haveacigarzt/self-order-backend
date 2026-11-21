@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -53,6 +54,38 @@ func (app *application) readStringParam(r *http.Request, key string) (string, er
 	}
 
 	return param, nil
+}
+
+func (app *application) readIntParam(r *http.Request, key string) (int64, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	param := params.ByName(key)
+
+	if param == "" {
+		return 0, errors.New("invalid " + key + " parameter")
+	}
+
+	value, err := strconv.ParseInt(param, 10, 64)
+	if err != nil {
+		return 0, errors.New("invalid " + key + " parameter")
+	}
+
+	return value, nil
+}
+
+func (app *application) readInt16Param(r *http.Request, key string) (int16, error) {
+	params := httprouter.ParamsFromContext(r.Context())
+	param := params.ByName(key)
+
+	if param == "" {
+		return 0, errors.New("invalid " + key + " parameter")
+	}
+
+	value, err := strconv.ParseInt(param, 10, 16)
+	if err != nil {
+		return 0, errors.New("invalid " + key + " parameter")
+	}
+
+	return int16(value), nil
 }
 
 // Change the data parameter to have the type envelope instead of any.
@@ -308,4 +341,42 @@ func formatRupiah(harga decimal.Decimal) string {
 	}
 
 	return negatif + "Rp " + s
+}
+
+func validateImage(file multipart.File, header *multipart.FileHeader) (string, error) {
+	const maxFileSize = 5 << 20 // 5 MB
+
+	// Validasi ukuran
+	if header.Size > maxFileSize {
+		return "", errors.New("image size exceeds 5 MB")
+	}
+
+	// Baca 512 byte pertama
+	buffer := make([]byte, 512)
+
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return "", err
+	}
+
+	// Deteksi MIME type
+	contentType := http.DetectContentType(buffer[:n])
+
+	allowedTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+		"image/webp": true,
+	}
+
+	if !allowedTypes[contentType] {
+		return "", errors.New("unsupported image format")
+	}
+
+	// Kembalikan posisi file ke awal
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		return "", err
+	}
+
+	return contentType, nil
 }

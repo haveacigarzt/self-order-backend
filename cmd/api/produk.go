@@ -1,11 +1,20 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	"io"
 	"log"
+	"math"
 	"net/http"
+	"os"
+	"path/filepath"
+
+	"github.com/google/uuid"
 
 	"github.com/shopspring/decimal"
 	"selforder.pramana.net/internal/data"
@@ -56,7 +65,43 @@ func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	result, err := json.MarshalIndent(produk, "", "  ")
+	gambar, err := app.models.Gambar.GetAllByProdukID(produk.ID)
+
+	// Inisialisasi 5 slot gambar
+	produk.Gambar = make([]data.ProdukGambar, 5)
+
+	for i := range produk.Gambar {
+		produk.Gambar[i].Urutan = int16(i + 1)
+	}
+
+	// Isi gambar yang tersedia dari database
+	for _, g := range gambar {
+		if g.Urutan < 1 || g.Urutan > 5 {
+			continue
+		}
+
+		produk.Gambar[g.Urutan-1].FilePath = g.FilePath
+	} // Inisialisasi 5 slot gambar
+	produk.Gambar = make([]data.ProdukGambar, 5)
+
+	for i := range produk.Gambar {
+		produk.Gambar[i].Urutan = int16(i + 1)
+	}
+
+	// Isi gambar yang tersedia dari database
+	for _, g := range gambar {
+		if g.Urutan < 1 || g.Urutan > 5 {
+			continue
+		}
+
+		produk.Gambar[g.Urutan-1].FilePath = g.FilePath
+	}
+
+	viewData := map[string]any{
+		"Produk": produk,
+	}
+
+	result, err := json.MarshalIndent(viewData, "", "  ")
 	if err != nil {
 		log.Println(err)
 		return
@@ -64,7 +109,7 @@ func (app *application) showProdukHandler(w http.ResponseWriter, r *http.Request
 
 	fmt.Println(string(result))
 
-	err = app.render(w, r, http.StatusOK, "single-produk", produk)
+	err = app.render(w, r, http.StatusOK, "single-produk", viewData)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
@@ -324,5 +369,164 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
+	}
+}
+
+func (app *application) updateGambarProdukHandler(w http.ResponseWriter, r *http.Request) {
+	idProduk, err := app.readIDParam(r)
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	urutan, err := app.readInt16Param(r, "urutan")
+	if err != nil {
+		app.notFoundResponse(w, r)
+		return
+	}
+
+	urutan += 1
+
+	if urutan < 1 || urutan > 5 {
+		app.badRequestResponse(w, r, errors.New("urutan must be between 1 and 5"))
+		return
+	}
+
+	//upload gambar
+	r.Body = http.MaxBytesReader(w, r.Body, 5<<20)
+
+	file, header, err := r.FormFile("gambar")
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	defer file.Close()
+
+	// Validasi ukuran
+	if header.Size > 5<<20 {
+		app.badRequestResponse(w, r, errors.New("image exceeds 5 MB"))
+		return
+	}
+
+	contentType, err := validateImage(file, header)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	filename := uuid.New().String()
+
+	fmt.Println("Produk Id:", idProduk)
+	fmt.Println("UU Id:", filename)
+	fmt.Println("Content Type:", contentType)
+
+	oldPath, err := app.models.Gambar.GetByProdukIDAndUrutan(idProduk, urutan)
+
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	fmt.Println("Old path:", oldPath)
+
+	if oldPath != "" {
+		err := os.Remove(filepath.Join("internal/static/uploads", oldPath))
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			app.logger.Error("failed to delete old image", "error", err)
+		}
+	}
+
+	// Ambil dimensi gambar
+	img, format, err := image.DecodeConfig(file)
+	if err != nil {
+		fmt.Println("Decode error:", err)
+		app.badRequestResponse(w, r, errors.New("invalid image file"))
+		return
+	}
+
+	fmt.Println("Format:", format)
+	fmt.Println("Width:", img.Width)
+	fmt.Println("Height:", img.Height)
+
+	if img.Width > math.MaxInt16 || img.Height > math.MaxInt16 {
+		app.badRequestResponse(w, r, errors.New("image dimensions are too large"))
+		return
+	}
+
+	width := int16(img.Width)
+	height := int16(img.Height)
+
+	fmt.Println("width:", width)
+
+	// Kembalikan posisi file ke awal
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// 6. Simpan gambar baru ke local storage
+	ext := filepath.Ext(header.Filename)
+	newPath := filepath.Join("produk", filename+ext)
+
+	fullPath := filepath.Join("internal/static/uploads", newPath)
+
+	err = os.MkdirAll(filepath.Dir(fullPath), 0755)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Simpan file baru
+	dst, err := os.Create(fullPath)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	_, copyErr := io.Copy(dst, file)
+	closeErr := dst.Close()
+
+	if copyErr != nil {
+		os.Remove(fullPath)
+		app.serverErrorResponse(w, r, copyErr)
+		return
+	}
+
+	if closeErr != nil {
+		os.Remove(fullPath)
+		app.serverErrorResponse(w, r, closeErr)
+		return
+	}
+
+	// 7. UPSERT data gambar ke PostgreSQL
+	gambar := &data.Gambar{
+		ProdukID: idProduk,
+		FilePath: newPath,
+		Width: sql.NullInt16{
+			Int16: width,
+			Valid: true,
+		},
+		Height: sql.NullInt16{
+			Int16: height,
+			Valid: true,
+		},
+		Urutan:      urutan,
+		IsThumbnail: urutan == 1,
+	}
+
+	err = app.models.Gambar.Upsert(gambar)
+	if err != nil {
+		os.Remove(fullPath) // Bersihkan file baru jika database gagal
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// 8. Hapus gambar lama setelah UPSERT berhasil
+	if oldPath != "" && oldPath != newPath {
+		err := os.Remove(filepath.Join("internal/static/uploads", oldPath))
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			app.logger.Error("failed to delete old image", "error", err)
+		}
 	}
 }
