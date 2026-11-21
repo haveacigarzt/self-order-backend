@@ -22,7 +22,19 @@
         <div class="grid grid-cols-2 gap-4">
             {{ range.Produk }}
                 <a class="flex flex-col gap-2 rounded-lg shadow-md p-3 bg-white produk-card relative cursor-pointer" href="/admin/produk/{{.Slug}}">
-                    <img src="https://placehold.co/600x400" alt="" class="aspect-square object-cover rounded-lg">
+                    {{ if (index .Gambar 0).FilePath }}
+                        <img
+                            src="/static/uploads/{{ (index .Gambar 0).FilePath }}"
+                            alt=""
+                            class="aspect-square object-cover rounded-lg"
+                        >
+                        {{ else }}
+                        <img
+                            src="https://placehold.co/600x400"
+                            alt="Placeholder"
+                            class="aspect-square object-cover rounded-lg"
+                        >
+                    {{ end }}
                     <div>
                         <p class="truncate">{{ .Nama }}</p>
                         <p data-harga={{ .Harga }}></p>

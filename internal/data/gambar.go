@@ -3,6 +3,8 @@ package data
 import (
 	"database/sql"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 type Gambar struct {
@@ -104,4 +106,43 @@ func (m GambarModel) Upsert(gambar *Gambar) error {
 
 	_, err := m.DB.Exec(query, args...)
 	return err
+}
+
+func (m GambarModel) GetAllByProdukIDs(produkIDs []int64) (map[int64][]ProdukGambar, error) {
+	query := `
+		SELECT produk_id, file_path, urutan
+		FROM gambar
+		WHERE produk_id = ANY($1)
+		ORDER BY produk_id, urutan ASC
+	`
+
+	rows, err := m.DB.Query(query, pq.Array(produkIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[int64][]ProdukGambar)
+
+	for rows.Next() {
+		var produkID int64
+		var gambar ProdukGambar
+
+		err := rows.Scan(
+			&produkID,
+			&gambar.FilePath,
+			&gambar.Urutan,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		result[produkID] = append(result[produkID], gambar)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

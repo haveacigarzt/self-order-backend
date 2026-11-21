@@ -19,6 +19,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/shopspring/decimal"
+	"selforder.pramana.net/internal/data"
 	"selforder.pramana.net/internal/validator"
 )
 
@@ -379,4 +380,22 @@ func validateImage(file multipart.File, header *multipart.FileHeader) (string, e
 	}
 
 	return contentType, nil
+}
+
+func buildProdukGambar(gambarList []data.ProdukGambar) []data.ProdukGambar {
+	result := make([]data.ProdukGambar, 5)
+
+	for i := range result {
+		result[i].Urutan = int16(i + 1)
+	}
+
+	for _, gambar := range gambarList {
+		if gambar.Urutan < 1 || gambar.Urutan > 5 {
+			continue
+		}
+
+		result[gambar.Urutan-1].FilePath = gambar.FilePath
+	}
+
+	return result
 }

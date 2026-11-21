@@ -49,10 +49,10 @@
                   <img
                     src="/static/uploads/{{ .FilePath }}"
                     alt="Gambar produk"
-                    class="aspect-square object-cover rounded-lg w-full"
+                    class="aspect-square object-cover rounded-lg w-full old-img"
                   >
                 {{ else }}
-                  <div class="aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
+                  <div class="aspect-square flex items-center justify-center bg-gray-100 rounded-lg preview">
                     <i class="fa-solid fa-image text-3xl text-gray-400"></i>
                   </div>
                 {{ end }}
@@ -79,7 +79,7 @@
                     required
                   >
 
-                  <button type="submit" class="rounded bg-primary shadow py-1">
+                  <button disabled type="submit" class="rounded bg-primary shadow py-1">
                     Simpan
                   </button>
                 </div>
@@ -89,6 +89,33 @@
         </div>
       </div>
     </main>
+    <script>
+      document.querySelectorAll('input[name="gambar"]').forEach(input => {
+        input.addEventListener('change', function () {
+          const file = this.files[0];
+          if (!file) return;
+          
+          const container = this.parentElement.parentElement.parentElement;
+          const submitBtn = container.querySelector("button[type='submit']")
+          submitBtn.disabled = false;
+          
+          const oldImg = container.querySelector(".old-img")
+          if (oldImg) {
+            oldImg.src = URL.createObjectURL(file);
+            return;
+          }
+
+          const preview = container.querySelector(".preview");
+          const img = document.createElement('img');
+
+          img.src = URL.createObjectURL(file);
+          img.alt = 'Preview gambar';
+          img.className = 'aspect-square object-cover rounded w-full';
+
+          preview.replaceChildren(img);
+        });
+      });
+    </script>
   </body>
 </html>
 {{ end }}

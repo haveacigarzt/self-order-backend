@@ -39,6 +39,27 @@ func (app *application) adminMainHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Kumpulkan ID produk
+	produkIDs := make([]int64, 0, len(produkList))
+
+	for _, produk := range produkList {
+		produkIDs = append(produkIDs, produk.ID)
+	}
+
+	// Ambil seluruh gambar sekaligus
+	gambarMap, err := app.models.Gambar.GetAllByProdukIDs(produkIDs)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Masukkan gambar ke setiap produk
+	for i := range produkList {
+		produkList[i].Gambar = buildProdukGambar(
+			gambarMap[produkList[i].ID],
+		)
+	}
+
 	groups := make([]data.ProdukGroup, 0)
 
 	groupIndex := make(map[int64]int)

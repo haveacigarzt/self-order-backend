@@ -1,3 +1,17 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const elements = document.querySelectorAll("[data-harga]");
+  const formatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  });
+  elements.forEach((element) => {
+    const harga = Number(element.dataset.harga);
+    const formatted = formatter.format(harga);
+    element.textContent = formatted;
+  });
+});
+
 const navContainer = document.getElementById("nav-container");
 const navLinks = navContainer.querySelectorAll('a[href^="#grup-"]');
 const sections = document.querySelectorAll('[id^="grup-"]');

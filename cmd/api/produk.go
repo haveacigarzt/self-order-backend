@@ -298,6 +298,27 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	// Kumpulkan ID produk
+	produkIDs := make([]int64, 0, len(produkList))
+
+	for _, produk := range produkList {
+		produkIDs = append(produkIDs, produk.ID)
+	}
+
+	// Ambil seluruh gambar sekaligus
+	gambarMap, err := app.models.Gambar.GetAllByProdukIDs(produkIDs)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// Masukkan gambar ke setiap produk
+	for i := range produkList {
+		produkList[i].Gambar = buildProdukGambar(
+			gambarMap[produkList[i].ID],
+		)
+	}
+
 	// Ambil pesanan
 	var pesananProduk *[]data.PesananProduk
 	var total decimal.Decimal
@@ -355,7 +376,7 @@ func (app *application) listProdukHandler(w http.ResponseWriter, r *http.Request
 		"TotalQty":      totalQty,
 	}
 
-	result, err := json.MarshalIndent(pesananProduk, "", "  ")
+	result, err := json.MarshalIndent(groups, "", "  ")
 	if err != nil {
 		log.Println(err)
 		return
@@ -385,10 +406,14 @@ func (app *application) updateGambarProdukHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	urutan += 1
-
 	if urutan < 1 || urutan > 5 {
 		app.badRequestResponse(w, r, errors.New("urutan must be between 1 and 5"))
+		return
+	}
+
+	produk, err := app.models.Produk.GetById(idProduk)
+	if err != nil {
+		app.notFoundResponse(w, r)
 		return
 	}
 
@@ -529,4 +554,7 @@ func (app *application) updateGambarProdukHandler(w http.ResponseWriter, r *http
 			app.logger.Error("failed to delete old image", "error", err)
 		}
 	}
+
+	http.Redirect(w, r, fmt.Sprintf("/admin/produk/%s", produk.Slug), http.StatusSeeOther)
+
 }
