@@ -28,15 +28,15 @@
             <div class="relative">
                 <img
                     id="modal_produk_image"
-                    src="https://placehold.co/200x200"
-                    alt="Product image"
+                    src=""
+                    alt=""
                     class="aspect-video w-full rounded-lg object-cover"
                 />
-
                 <button
                     type="button"
                     class="absolute left-2 top-2 z-10 rounded-md
                             bg-white/80 px-2 py-1 text-sm shadow"
+                            id="button_max_image"
                 >
                     <i class="fa-solid fa-expand"></i>
                 </button>
@@ -84,5 +84,31 @@
             <div class="bg-linear-to-t from-white to-gray-200 h-3"></div>
         </div>
     </form>
+    <div id="modal_image_carousel" class="flex items-center">
+        <button
+            id="close_image_carousel"
+            type="button"
+            class="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-full
+                bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
+        >
+            ✕
+        </button>
+        <div class="carousel-container">
+            <button id="prev" class="carousel-button">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+
+            <div class="carousel">
+                <div class="carousel-track" id="carousel-track">
+                </div>
+            </div>
+
+            <button id="next" class="carousel-button">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+
+            <div class="carousel-markers" id="carousel-markers"></div>
+        </div>
+    </div>
 </div>
 {{end}}

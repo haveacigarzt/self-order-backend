@@ -104,3 +104,106 @@ button:focus-visible {
 .add-menu.active {
   transform: translateY(0);
 }
+
+#modal_image_carousel {
+  position: fixed;
+  inset: 0;
+  z-index: 52;
+
+  /* Semi-transparent background is required to see the blur */
+  background-color: rgba(0, 0, 0, 0.4);
+
+  /* Blurs the content behind this element */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px); /* Safari support */
+
+  transform: translateY(120%);
+  transition: transform 300ms ease;
+}
+
+#modal_image_carousel.active {
+  transform: translateY(0);
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+}
+
+.carousel {
+  width: 100%;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+  anchor-name: --carousel-container;
+}
+
+.carousel-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.carousel-track.dragging {
+  transition: none;
+}
+
+.carousel:active {
+  cursor: grabbing;
+}
+
+.carousel-track.dragging {
+  transition: none;
+}
+
+.card {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 23rem;
+  text-align: center;
+  align-content: center;
+}
+
+.carousel-button {
+  position: fixed;
+  position-anchor: --carousel-container;
+  z-index: 2;
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  border-radius: 50%;
+  background-color: aliceblue;
+  cursor: pointer;
+}
+
+#prev {
+  margin-left: 0.5rem;
+  position-area: left center;
+}
+
+#next {
+  margin-right: 0.5rem;
+  position-area: right center;
+}
+
+.carousel-markers {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.carousel-marker {
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: aliceblue;
+  cursor: pointer;
+}
+
+.carousel-marker.active {
+  background-color: var(--color-primary);
+}

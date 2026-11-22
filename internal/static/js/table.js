@@ -93,6 +93,7 @@ const produkNama = document.getElementById("modal_produk_nama");
 const produkDeskripsi = document.getElementById("modal_produk_deskripsi");
 const produkHarga = document.getElementById("modal_produk_harga");
 const quantityElement = document.getElementById("modal_produk_quantity");
+const produkThumbnail = document.getElementById("modal_produk_image");
 const produkIdInput = document.getElementById("produk_id_input");
 const quantityInput = document.getElementById("quantity_input");
 const notesInput = document.getElementById("notes_input");
@@ -187,6 +188,13 @@ function openAddMenu(produk) {
   produkDeskripsi.textContent = selectedProduk.deskripsi;
   produkHarga.textContent = formatRupiah(selectedProduk.harga);
   produkIdInput.value = selectedProduk.id;
+  if (selectedProduk.gambar[0].filepath) {
+    produkThumbnail.src = `/static/uploads/${selectedProduk.gambar[0].filepath}`;
+    produkThumbnail.alt = "product image";
+  } else {
+    produkThumbnail.src = "/static/img/placeholder.svg";
+    produkThumbnail.alt = "placeholder image";
+  }
 
   quantityElement.textContent = selectedProduk.qty;
   quantityInput.value = selectedProduk.qty;
@@ -231,14 +239,19 @@ window.addEventListener("popstate", () => {
 
   const isOpenAddMenu = url.hash === "#add-menu";
   const isOpenCart = url.hash === "#cart";
+  const isOpenCarousel = url.hash === "#carousel";
 
   document.getElementById("add-menu").classList.toggle("active", isOpenAddMenu);
 
   document.getElementById("cart").classList.toggle("active", isOpenCart);
 
+  document
+    .getElementById("modal_image_carousel")
+    .classList.toggle("active", isOpenCarousel);
+
   document.body.classList.toggle(
     "overflow-hidden",
-    isOpenAddMenu || isOpenCart,
+    isOpenAddMenu || isOpenCart || isOpenCarousel,
   );
 });
 
@@ -293,3 +306,217 @@ document.querySelectorAll(".edit-button").forEach((button) => {
     }
   });
 });
+
+//
+const modal_image_carousel = document.getElementById("modal_image_carousel");
+
+const markers = document.getElementById("carousel-markers");
+
+function openImageCarousel() {
+  console.log("open image carousel");
+  const url = new URL(window.location.href);
+
+  url.hash = "carousel";
+
+  history.pushState({}, "", url);
+
+  modal_image_carousel.classList.add("active");
+  modal_image_carousel.parentElement.classList.add("overflow-hidden");
+
+  const carousel = document.querySelector(".carousel");
+  const track = document.getElementById("carousel-track");
+
+  const prev = document.getElementById("prev");
+  const next = document.getElementById("next");
+
+  let inner = "";
+
+  selectedProduk.gambar.forEach((gambar) => {
+    if (!gambar.filepath) return;
+
+    inner += `
+    <div class="card">
+      <img
+        src="/static/uploads/${gambar.filepath}"
+        alt=""
+        class="aspect-square object-cover"
+        draggable="false"
+      >
+    </div>`;
+  });
+
+  track.innerHTML = inner;
+
+  const cards = track.querySelectorAll(".card");
+
+  let currentIndex = 0;
+
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  let activePointerId = null;
+
+  // =================================
+  // 1. Buat marker
+  // =================================
+
+  cards.forEach((_, index) => {
+    const marker = document.createElement("button");
+
+    marker.type = "button";
+    marker.className = "carousel-marker";
+
+    marker.addEventListener("click", () => {
+      goToSlide(index);
+    });
+
+    markers.appendChild(marker);
+  });
+
+  const markerItems = markers.querySelectorAll(".carousel-marker");
+
+  // =================================
+  // 2. Navigasi slide
+  // =================================
+
+  function goToSlide(index) {
+    currentIndex = Math.max(0, Math.min(index, cards.length - 1));
+
+    track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+    markerItems.forEach((marker, i) => {
+      marker.classList.toggle("active", i === currentIndex);
+    });
+
+    prev.disabled = currentIndex === 0;
+    next.disabled = currentIndex === cards.length - 1;
+  }
+
+  // =================================
+  // 3. Tombol navigasi
+  // =================================
+
+  prev.addEventListener("click", () => {
+    goToSlide(currentIndex - 1);
+  });
+
+  next.addEventListener("click", () => {
+    goToSlide(currentIndex + 1);
+  });
+
+  // =================================
+  // 4. Mulai drag
+  // =================================
+
+  carousel.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    if (isDragging) return;
+
+    startX = e.clientX;
+    currentX = e.clientX;
+
+    isDragging = true;
+    activePointerId = e.pointerId;
+
+    carousel.setPointerCapture(e.pointerId);
+
+    track.classList.add("dragging");
+  });
+
+  // =================================
+  // 5. Gerakkan carousel
+  // =================================
+
+  carousel.addEventListener("pointermove", (e) => {
+    if (!isDragging || e.pointerId !== activePointerId) return;
+
+    currentX = e.clientX;
+
+    const distance = currentX - startX;
+    const width = carousel.offsetWidth;
+
+    let offset = -(currentIndex * width) + distance;
+
+    // Batasi pergerakan pada awal dan akhir carousel
+    if (currentIndex === 0 && distance > 0) {
+      offset = distance * 0.3;
+    }
+
+    if (currentIndex === cards.length - 1 && distance < 0) {
+      offset = -(currentIndex * width) + distance * 0.3;
+    }
+
+    track.style.transform = `translateX(${offset}px)`;
+  });
+
+  // =================================
+  // 6. Selesaikan drag
+  // =================================
+
+  function endDrag(e) {
+    if (!isDragging || e.pointerId !== activePointerId) return;
+
+    const distance = currentX - startX;
+    const threshold = carousel.offsetWidth * 0.2;
+
+    isDragging = false;
+    activePointerId = null;
+
+    track.classList.remove("dragging");
+
+    if (distance < -threshold) {
+      goToSlide(currentIndex + 1);
+    } else if (distance > threshold) {
+      goToSlide(currentIndex - 1);
+    } else {
+      goToSlide(currentIndex);
+    }
+  }
+
+  carousel.addEventListener("pointerup", endDrag);
+  carousel.addEventListener("pointercancel", endDrag);
+
+  // =================================
+  // 7. Inisialisasi
+  // =================================
+
+  if (cards.length > 0) {
+    goToSlide(0);
+  } else {
+    prev.disabled = true;
+    next.disabled = true;
+  }
+}
+
+function closeImageCarousel() {
+  console.log("close image carousel");
+
+  modal_image_carousel.classList.remove("active");
+  modal_image_carousel.parentElement.classList.remove("overflow-hidden");
+
+  history.replaceState(
+    {},
+    "",
+    window.location.pathname + window.location.search,
+  );
+  markers.replaceChildren();
+}
+
+produkThumbnail.addEventListener("click", (e) => {
+  const target = e.target;
+  if (target.alt == "placeholder image") return;
+  // console.log(selectedProduk);
+  openImageCarousel();
+});
+
+const button_max_image = document.getElementById("button_max_image");
+button_max_image.addEventListener("click", (e) => {
+  const target = e.currentTarget.previousElementSibling;
+  if (target.alt == "placeholder image") return;
+  // console.log(selectedProduk);
+  openImageCarousel();
+});
+
+document
+  .getElementById("close_image_carousel")
+  .addEventListener("click", closeImageCarousel);
