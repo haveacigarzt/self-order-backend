@@ -520,3 +520,38 @@ button_max_image.addEventListener("click", (e) => {
 document
   .getElementById("close_image_carousel")
   .addEventListener("click", closeImageCarousel);
+
+const pembayaran = document.getElementById("pembayaran");
+
+document
+  .getElementById("pembayaran_button")
+  .addEventListener("click", openPembayaran);
+
+document
+  .getElementById("close_pembayaran")
+  .addEventListener("click", closePembayaran);
+
+function openPembayaran() {
+  console.log("open pembayaran");
+  const url = new URL(window.location.href);
+
+  url.hash = "pembayaran";
+
+  history.pushState({}, "", url);
+
+  pembayaran.classList.add("active");
+  pembayaran.parentElement.classList.add("overflow-hidden");
+}
+
+function closePembayaran() {
+  console.log("close pembayaran");
+
+  pembayaran.classList.remove("active");
+  pembayaran.parentElement.classList.remove("overflow-hidden");
+
+  history.replaceState(
+    {},
+    "",
+    window.location.pathname + window.location.search,
+  );
+}

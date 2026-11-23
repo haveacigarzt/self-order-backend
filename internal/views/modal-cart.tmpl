@@ -80,11 +80,12 @@
               <div class="text-2xl">{{.Total}}</div>
             </div>
             <div class="my-auto">
-              <button id="simpan_button"  class="bg-primary rounded p-3 shadow">Pembayaran</button>
+              <button id="pembayaran_button" class="bg-primary rounded p-3 shadow">Pembayaran</button>
             </div>
         </div>
         <div class="bg-linear-to-t from-white to-gray-200 h-3"></div>
       </div>
     </div>
 </div>
+{{template "modal-pembayaran" .}}
 {{end}}
